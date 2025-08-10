@@ -55,7 +55,6 @@ func generateFunctionTimeline(function *common.Function, duration int, granulari
 			sum = 0.0
 		}
 	}
-
 	return concurrency
 }
 

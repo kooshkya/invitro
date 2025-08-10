@@ -42,6 +42,7 @@ import (
 var (
 	tracePath       = flag.String("tracePath", "data/traces/", "Path to folder where the trace is located")
 	outputFile      = flag.String("outputFile", "output.csv", "Path to output file")
+	granularity     = flag.String("granularity", "millisecond", "Time granularity for concurrency output, one of [second, millisecond]")
 	duration        = flag.Int("duration", 1440, "Duration of the traces in minutes")
 	iatDistribution = flag.String("iatDistribution", "exponential", "IAT distribution, one of [exponential(_shift), uniform(_shift), equidistant(_shift)]")
 	randSeed        = flag.Uint64("randSeed", 42, "Seed for the random number generator")
@@ -56,6 +57,13 @@ type coldStartRecord struct {
 	FunctionNum int `csv:"functionNum"`
 }
 
+type TimelineUnit struct {
+	Function 	int 	`csv:"function"`
+	Timestamp   float64 `csv:"timestamp"`
+	Concurrency int		`csv:"concurrency"`
+}
+
+
 func main() {
 	flag.Parse()
 
@@ -68,6 +76,8 @@ func main() {
 		estimateCPUUsage(functions, *duration, *slowdown, written, writer, *threads)
 	case "memory":
 		estimateMemoryUsage(functions, *duration, *slowdown, *keepalive, written, writer, *threads)
+	case "concurrency":
+		getConcurrency(functions, *granularity, *duration, written, writer, *threads)
 	}
 }
 
@@ -92,6 +102,18 @@ func parseIATDistribution(iat string) (common.IatDistribution, bool) {
 	}
 
 	return common.Exponential, false
+}
+
+func parseGranularity(granularity string) time.Duration {
+	switch granularity {
+	case "second":
+		return time.Second
+	case "millisecond":
+		return time.Millisecond
+	default:
+		log.Fatal("Unsupported granularity.")
+	}
+	return time.Millisecond
 }
 
 func commonInit(outputFilename string, tracePath string, duration int, iatDistribution string, randSeed uint64) (chan interface{}, *sync.WaitGroup, []*common.Function) {
@@ -175,4 +197,29 @@ func getColdStarts(concurrency []int, keepalive int, writer chan int) {
 			writer <- i
 		}
 	}
+}
+
+func getConcurrency(functions []*common.Function, granularity_string string, duration int, allRecordsWritten *sync.WaitGroup, writer chan interface{}, threads int) {
+	var allFunctionsProcessed sync.WaitGroup
+
+	granularity := parseGranularity(granularity_string)
+	limiter := make(chan struct{}, threads)
+
+	for i, function := range functions {
+		allFunctionsProcessed.Add(1)
+		limiter <- struct{}{}
+
+		go func() {
+			defer allFunctionsProcessed.Done()
+			defer func() { <-limiter }()
+
+			timeline := generateFunctionTimeline(function, duration, granularity)
+			for j, c := range timeline {
+				writer <- TimelineUnit{i, float64(j), c}
+			}
+		}()
+	}
+	allFunctionsProcessed.Wait()
+	close(writer)
+	allRecordsWritten.Wait()
 }
