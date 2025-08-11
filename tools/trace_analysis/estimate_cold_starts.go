@@ -47,7 +47,7 @@ var (
 	iatDistribution = flag.String("iatDistribution", "exponential", "IAT distribution, one of [exponential(_shift), uniform(_shift), equidistant(_shift)]")
 	randSeed        = flag.Uint64("randSeed", 42, "Seed for the random number generator")
 	keepalive       = flag.Int("keepalive", 6, "Keepalive period in seconds")
-	typeFlag        = flag.String("type", "coldstart", "Type of analysis to perform, one of [coldstart, cpu, memory]")
+	typeFlag        = flag.String("type", "coldstart", "Type of analysis to perform, one of [coldstart, cpu, memory, concurrency]")
 	slowdown        = flag.Float64("slowdown", 1.0, "Slowdown factor for each invocation for the analysis")
 	threads         = flag.Int("j", 12, "Number of threads to use for processing")
 )
@@ -215,7 +215,9 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 
 			timeline := generateFunctionTimeline(function, duration, granularity)
 			for j, c := range timeline {
-				writer <- TimelineUnit{i, float64(j), c}
+				if c > 0 || j == 0 || j == len(timeline) - 1 {
+					writer <- TimelineUnit{i, float64(j), c}
+				}
 			}
 		}()
 	}
