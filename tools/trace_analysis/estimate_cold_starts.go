@@ -63,6 +63,8 @@ type TimelineUnit struct {
 	Timestamp   float64 `csv:"timestamp"`
 	Concurrency int		`csv:"concurrency"`
 	AverageDuration float64 `csv:"duration-avg"`
+	AverageMemory float64 	`csv:"memory-avg"`
+	InvocationAVerage float64	`csv:"invocation-avg"`
 }
 
 
@@ -213,6 +215,12 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 
 		fmt.Println("function %d is %s-%s-%s", i, function.InvocationStats.HashOwner, function.InvocationStats.HashApp, function.InvocationStats.HashFunction)
 
+		sum := 0
+		for _, v := range function.InvocationStats.Invocations {
+			sum += v
+		}
+		invocation_avg := float64(sum) / float64(len(invocations))
+		
 		go func() {
 			defer allFunctionsProcessed.Done()
 			defer func() { <-limiter }()
@@ -220,7 +228,7 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 			timeline := generateFunctionTimeline(function, duration, granularity)
 			for j, c := range timeline {
 				if c > 0 || j == 0 || j == len(timeline) - 1 {
-					writer <- TimelineUnit{i, float64(j), c, function.RuntimeStats.Average}
+					writer <- TimelineUnit{i, float64(j), c, function.RuntimeStats.Average, function.MemoryStats.Average, invocation_avg}
 				}
 			}
 		}()
