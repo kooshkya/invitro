@@ -216,10 +216,14 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 		fmt.Println("function %d is %s-%s-%s", i, function.InvocationStats.HashOwner, function.InvocationStats.HashApp, function.InvocationStats.HashFunction)
 
 		sum := 0
+		count := 0
 		for _, v := range function.InvocationStats.Invocations {
-			sum += v
+			if v > 0 {
+				sum += v
+				count += 1
+			}
 		}
-		invocation_avg := float64(sum) / float64(len(function.InvocationStats.Invocations))
+		invocation_avg := float64(sum) / float64(count)
 		
 		go func() {
 			defer allFunctionsProcessed.Done()
