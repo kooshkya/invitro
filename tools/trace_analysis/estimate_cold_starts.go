@@ -31,7 +31,8 @@ import (
 	"sync"
 	"time"
 	"fmt"
-
+	"math"
+	
 	"github.com/gocarina/gocsv"
 	log "github.com/sirupsen/logrus"
 
