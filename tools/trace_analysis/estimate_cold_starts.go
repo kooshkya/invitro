@@ -64,7 +64,8 @@ type TimelineUnit struct {
 	Concurrency int		`csv:"concurrency"`
 	AverageDuration float64 `csv:"duration-avg"`
 	AverageMemory float64 	`csv:"memory-avg"`
-	InvocationAVerage float64	`csv:"invocation-avg"`
+	InvocationAverage float64	`csv:"invocation-avg"`
+	InvocationCV float64	`csv:"invocation-cv"`
 }
 
 
@@ -203,6 +204,39 @@ func getColdStarts(concurrency []int, keepalive int, writer chan int) {
 	}
 }
 
+func mean(data []int) float64 {
+	if len(data) == 0 {
+		return 0
+	}
+	sum := 0
+	for _, v := range data {
+		sum += v
+	}
+	return float64(sum) / float64(len(data))
+}
+
+func stddev(data []int) float64 {
+	if len(data) == 0 {
+		return 0
+	}
+	m := mean(data)
+	var varianceSum float64
+	for _, v := range data {
+		diff := float64(v) - m
+		varianceSum += diff * diff
+	}
+	variance := varianceSum / float64(len(data))
+	return math.Sqrt(variance)
+}
+
+func coeffOfVariation(data []int) float64 {
+	m := mean(data)
+	if m == 0 {
+		return 0
+	}
+	return stddev(data) / m
+}
+
 func getConcurrency(functions []*common.Function, granularity_string string, duration int, allRecordsWritten *sync.WaitGroup, writer chan interface{}, threads int) {
 	var allFunctionsProcessed sync.WaitGroup
 
@@ -215,15 +249,9 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 
 		fmt.Println("function %d is %s-%s-%s", i, function.InvocationStats.HashOwner, function.InvocationStats.HashApp, function.InvocationStats.HashFunction)
 
-		sum := 0
-		count := 0
-		for _, v := range function.InvocationStats.Invocations {
-			if v > 0 {
-				sum += v
-				count += 1
-			}
-		}
-		invocation_avg := float64(sum) / float64(count)
+		
+		invocation_avg := mean(function.InvocationStats.Invocations)
+		invocation_cv := coeffOfVariation(function.InvocationStats.Invocations)
 		
 		go func() {
 			defer allFunctionsProcessed.Done()
@@ -232,7 +260,7 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 			timeline := generateFunctionTimeline(function, duration, granularity)
 			for j, c := range timeline {
 				if c > 0 || j == 0 || j == len(timeline) - 1 {
-					writer <- TimelineUnit{i, float64(j), c, function.RuntimeStats.Average, function.MemoryStats.Average, invocation_avg}
+					writer <- TimelineUnit{i, float64(j), c, function.RuntimeStats.Average, function.MemoryStats.Average, invocation_avg, invocation_cv}
 				}
 			}
 		}()
