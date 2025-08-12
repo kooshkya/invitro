@@ -219,7 +219,7 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 		for _, v := range function.InvocationStats.Invocations {
 			sum += v
 		}
-		invocation_avg := float64(sum) / float64(len(invocations))
+		invocation_avg := float64(sum) / float64(len(function.InvocationStats.Invocations))
 		
 		go func() {
 			defer allFunctionsProcessed.Done()
