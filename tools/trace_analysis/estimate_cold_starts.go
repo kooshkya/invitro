@@ -30,6 +30,7 @@ import (
 	"slices"
 	"sync"
 	"time"
+	"fmt"
 
 	"github.com/gocarina/gocsv"
 	log "github.com/sirupsen/logrus"
@@ -61,6 +62,7 @@ type TimelineUnit struct {
 	Function 	int 	`csv:"function"`
 	Timestamp   float64 `csv:"timestamp"`
 	Concurrency int		`csv:"concurrency"`
+	AverageDuration float64 `csv:"duration-avg"`
 }
 
 
@@ -209,6 +211,8 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 		allFunctionsProcessed.Add(1)
 		limiter <- struct{}{}
 
+		fmt.Println("function %d is %s-%s-%s", i, function.InvocationStats.HashOwner, function.InvocationStats.HashApp, function.InvocationStats.HashFunction)
+
 		go func() {
 			defer allFunctionsProcessed.Done()
 			defer func() { <-limiter }()
@@ -216,7 +220,7 @@ func getConcurrency(functions []*common.Function, granularity_string string, dur
 			timeline := generateFunctionTimeline(function, duration, granularity)
 			for j, c := range timeline {
 				if c > 0 || j == 0 || j == len(timeline) - 1 {
-					writer <- TimelineUnit{i, float64(j), c}
+					writer <- TimelineUnit{i, float64(j), c, function.RuntimeStats.Average}
 				}
 			}
 		}()
