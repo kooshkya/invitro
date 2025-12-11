@@ -279,6 +279,16 @@ function distribute_loader_ssh_key() {
 
     server_exec $MASTER_NODE "kubectl patch configmap -n knative-serving config-features -p '{\"data\": {\"kubernetes.podspec-affinity\": \"enabled\"}}'"
 
+    server_exec $MASTER_NODE \
+        "kubectl patch configmap -n knative-serving config-observability \
+        --type='merge' \
+        -p '{\"data\": {\"logging.enable-request-log\": \"true\"}}'"
+
+    server_exec $MASTER_NODE \
+        "kubectl patch configmap -n knative-serving config-observability \
+        --type='merge' \
+        -p '{\"data\": {\"logging.request-log-template\": \"{\\\"httpRequest\\\": {\\\"requestMethod\\\": \\\"{{.Request.Method}}\\\", \\\"requestUrl\\\": \\\"{{js .Request.RequestURI}}\\\", \\\"requestSize\\\": \\\"{{.Request.ContentLength}}\\\", \\\"status\\\": {{.Response.Code}}, \\\"responseSize\\\": \\\"{{.Response.Size}}\\\", \\\"userAgent\\\": \\\"{{js .Request.UserAgent}}\\\", \\\"remoteIp\\\": \\\"{{js .Request.RemoteAddr}}\\\", \\\"serverIp\\\": \\\"{{.Revision.PodIP}}\\\", \\\"referer\\\": \\\"{{js .Request.Referer}}\\\", \\\"latency\\\": \\\"{{.Response.Latency}}s\\\", \\\"protocol\\\": \\\"{{.Request.Proto}}\\\"}, \\\"traceId\\\": \\\"{{index .Request.Header \\\"X-B3-Traceid\\\"}}\\\"}\"}}'"
+
 
     if [[ "$DEPLOY_PROMETHEUS" == true ]]; then
         $DIR/expose_infra_metrics.sh $MASTER_NODE
