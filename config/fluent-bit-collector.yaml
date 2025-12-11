@@ -46,17 +46,22 @@ data:
     [FILTER]
       Name      rewrite_tag
       Match     kube.*
-      Rule      $kubernetes['labels']['serving.knative.dev/configuration'] ^(.+)$ knative.$kubernetes['namespace_name'].$1.log false
+      Rule      $log ^.*billing.*$ billing.log true
 
-    [FILTER]
-      Name      rewrite_tag
-      Match     kube.*
-      Rule      $kubernetes['labels']['app'] ^(.+)$ app.$kubernetes['namespace_name'].$1.log false
+    # [FILTER]
+    #   Name      rewrite_tag
+    #   Match     kube.*
+    #   Rule      $kubernetes['labels']['serving.knative.dev/configuration'] ^(.+)$ knative.$kubernetes['namespace_name'].$1.log true
 
-    [FILTER]
-      Name      rewrite_tag
-      Match     kube.*
-      Rule      $kubernetes['pod_name'] ^(.+)$ pod.$kubernetes['namespace_name'].$1.log false
+    # [FILTER]
+    #   Name      rewrite_tag
+    #   Match     kube.*
+    #   Rule      $kubernetes['labels']['app'] ^(.+)$ app.$kubernetes['namespace_name'].$1.log true
+
+    # [FILTER]
+    #   Name      rewrite_tag
+    #   Match     kube.*
+    #   Rule      $kubernetes['pod_name'] ^(.+)$ pod.$kubernetes['namespace_name'].$1.log true
 
   output-files.conf: |
     [OUTPUT]

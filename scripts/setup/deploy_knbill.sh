@@ -42,7 +42,7 @@ server_exec() {
 
     server_exec "kubectl patch configmap -n knative-serving config-observability \
         --type='merge' \
-        -p '{\"data\": {\"logging.request-log-template\": \"{\\\"httpRequest\\\": {\\\"requestMethod\\\": \\\"{{.Request.Method}}\\\", \\\"requestUrl\\\": \\\"{{js .Request.RequestURI}}\\\", \\\"requestSize\\\": \\\"{{.Request.ContentLength}}\\\", \\\"status\\\": {{.Response.Code}}, \\\"responseSize\\\": \\\"{{.Response.Size}}\\\", \\\"userAgent\\\": \\\"{{js .Request.UserAgent}}\\\", \\\"remoteIp\\\": \\\"{{js .Request.RemoteAddr}}\\\", \\\"serverIp\\\": \\\"{{.Revision.PodIP}}\\\", \\\"referer\\\": \\\"{{js .Request.Referer}}\\\", \\\"latency\\\": \\\"{{.Response.Latency}}s\\\", \\\"protocol\\\": \\\"{{.Request.Proto}}\\\"}, \\\"traceId\\\": \\\"{{index .Request.Header \\\"X-B3-Traceid\\\"}}\\\"}\"}}'"
+        -p '{\"data\": {\"logging.request-log-template\": \"{\\\"billing\\\":\\\"true\\\", \\\"httpRequest\\\": {\\\"requestMethod\\\": \\\"{{.Request.Method}}\\\", \\\"requestUrl\\\": \\\"{{js .Request.RequestURI}}\\\", \\\"requestSize\\\": \\\"{{.Request.ContentLength}}\\\", \\\"status\\\": {{.Response.Code}}, \\\"responseSize\\\": \\\"{{.Response.Size}}\\\", \\\"userAgent\\\": \\\"{{js .Request.UserAgent}}\\\", \\\"remoteIp\\\": \\\"{{js .Request.RemoteAddr}}\\\", \\\"serverIp\\\": \\\"{{.Revision.PodIP}}\\\", \\\"referer\\\": \\\"{{js .Request.Referer}}\\\", \\\"latency\\\": \\\"{{.Response.Latency}}s\\\", \\\"protocol\\\": \\\"{{.Request.Proto}}\\\"}, \\\"traceId\\\": \\\"{{index .Request.Header \\\"X-B3-Traceid\\\"}}\\\"}\"}}'"
 
     # kubectl create/apply with error check
     server_exec "kubectl create namespace logging"
