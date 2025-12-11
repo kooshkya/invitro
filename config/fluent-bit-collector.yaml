@@ -12,11 +12,6 @@ spec:
     path: /mnt/data/logs
 ---
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: logging
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: log-collector-config
